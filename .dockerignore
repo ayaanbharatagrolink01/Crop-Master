@@ -1,0 +1,26 @@
+# Secrets: pass them at runtime (docker compose env_file), never bake into the image
+.env
+**/.env
+!backend/.env.example
+
+# Local environments and caches
+.venv/
+**/__pycache__/
+**/*.pyc
+.git/
+.vscode/
+.idea/
+
+# Not needed at runtime
+backend/tests/
+README.md
+Dockerfile
+docker-compose.yml
+
+# Runtime data with personal or customer records: lives in the mounted volume
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+data/orders.csv
+data/qdrant_local/

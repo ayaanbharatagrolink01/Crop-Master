@@ -1,0 +1,12 @@
+services:
+  api:
+    build: .
+    image: crop-master-api:latest
+    container_name: crop-master-api
+    env_file: backend/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      # Databases, workbook and regional docs persist on the host
+      - ./data:/srv/data
+    restart: unless-stopped

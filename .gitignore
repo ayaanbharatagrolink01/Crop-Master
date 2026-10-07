@@ -1,0 +1,29 @@
+# Secrets (backend/.env.example is a template and stays tracked)
+.env
+**/.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Runtime databases: farmer accounts, conversations, caches (created on startup)
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+data/qdrant_local/
+
+# Private customer data
+data/orders.csv
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

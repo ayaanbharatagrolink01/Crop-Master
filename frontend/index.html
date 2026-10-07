@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Crop Master Agronomist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Rozha+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<style>
+:root{
+  --bg:#E6ECDD; --panel:#FAFCF6; --ink:#2A2117; --muted:#5E6656; --line:#C6D0B9;
+  --leaf:#2F5D3A; --leaf-soft:#DCE8D3; --turmeric:#C98A06; --turmeric-soft:#F7E8C2;
+  --chilli:#A93526; --chilli-soft:#F5DCD6; --user:#2F5D3A; --user-ink:#F4F8EF;
+  --shadow:0 1px 0 rgba(42,33,23,.06);
+  --serif:"Rozha One", "Tiro Devanagari Hindi", Georgia, serif;
+  --sans:"Mukta", "Noto Sans Devanagari", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#121811; --panel:#1B231A; --ink:#E5EADD; --muted:#A3AE98; --line:#34412F;
+    --leaf:#86BE8C; --leaf-soft:#243623; --turmeric:#E8B53D; --turmeric-soft:#3A2F12;
+    --chilli:#E5806F; --chilli-soft:#3D1F1A; --user:#2F5D3A; --user-ink:#EEF5E8;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121811; --panel:#1B231A; --ink:#E5EADD; --muted:#A3AE98; --line:#34412F;
+  --leaf:#86BE8C; --leaf-soft:#243623; --turmeric:#E8B53D; --turmeric-soft:#3A2F12;
+  --chilli:#E5806F; --chilli-soft:#3D1F1A; --user:#2F5D3A; --user-ink:#EEF5E8;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.55}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--turmeric);outline-offset:2px}
+img{max-width:100%}
+
+.app{display:grid;grid-template-columns:300px 1fr;height:100%;max-width:1280px;margin:0 auto}
+/* sidebar */
+.side{border-right:1px solid var(--line);padding:22px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+.brand h1{font-family:var(--serif);font-weight:400;font-size:2rem;line-height:1;margin:0;letter-spacing:-.01em}
+.brand p{margin:6px 0 0;color:var(--muted);font-size:.95rem;line-height:1.35}
+.brand .hi{font-family:var(--serif);color:var(--leaf);font-size:1.15rem;margin-top:4px}
+.user-section{border-bottom:1px solid var(--line);padding-bottom:10px}
+.user-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--leaf-soft);border:1px solid var(--leaf);border-radius:8px;padding:6px 10px;font-size:.85rem}
+.conv-section{display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.conv-list{display:flex;flex-direction:column;gap:5px;max-height:160px;overflow-y:auto}
+.conv-item{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:.82rem;cursor:pointer;text-align:left;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv-item:hover,.conv-item.active{border-color:var(--leaf);background:var(--leaf-soft)}
+.profile h2{font-size:1rem;font-weight:700;margin:0 0 2px}
+.profile .why{font-size:.85rem;color:var(--muted);margin:0 0 10px;line-height:1.35}
+.field{display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
+.field label{font-size:.85rem;font-weight:600;color:var(--muted)}
+.field input,.field select{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-height:40px;width:100%}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stats{font-size:.85rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:12px;line-height:1.5}
+.stats strong{color:var(--ink);font-weight:600}
+.side .ghost{align-self:flex-start}
+.placerow{display:flex;gap:6px}
+.map{height:200px;border-radius:10px;border:1px solid var(--line);margin:4px 0 4px;z-index:0;background:var(--panel)}
+.maphint{font-size:.8rem;color:var(--muted);margin:0 0 10px;line-height:1.3}
+.placerow input{flex:1;min-width:0}
+
+/* main */
+.main{display:flex;flex-direction:column;height:100%;min-width:0}
+.topbar{display:none}
+.thread{flex:1;overflow-y:auto;padding:28px 28px 12px}
+.thread-inner{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.welcome h2{font-family:var(--serif);font-weight:400;font-size:clamp(1.9rem,4vw,2.7rem);line-height:1.08;margin:8px 0 10px;max-width:16ch}
+.welcome p{color:var(--muted);max-width:60ch;margin:0 0 18px}
+.starters{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.starter{text-align:left;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--leaf);border-radius:6px 12px 12px 6px;padding:12px 14px;cursor:pointer;line-height:1.35}
+.starter:hover{border-color:var(--leaf)}
+.starter small{display:block;color:var(--muted);font-size:.8rem;margin-top:4px}
+
+.msg{display:flex;flex-direction:column;gap:6px}
+.msg.user{align-items:flex-end}
+.bubble{max-width:min(620px,92%);padding:10px 15px;border-radius:16px}
+.msg.user .bubble{background:var(--user);color:var(--user-ink);border-bottom-right-radius:4px;white-space:pre-wrap}
+.msg.user .photo{max-width:180px;border-radius:10px;border:1px solid var(--line)}
+.msg.ai .bubble{background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:4px;max-width:100%;box-shadow:var(--shadow)}
+.who{font-size:.8rem;color:var(--muted);font-weight:600;padding:0 4px}
+.answer h1,.answer h2,.answer h3{font-size:1.05rem;margin:14px 0 4px;font-weight:700}
+.answer p{margin:6px 0}
+.answer ul,.answer ol{margin:6px 0;padding-left:1.3em}
+.answer li{margin:2px 0}
+.answer table{border-collapse:collapse;font-size:.92rem;display:block;overflow-x:auto;max-width:100%}
+.answer th,.answer td{border:1px solid var(--line);padding:4px 8px;text-align:left;vertical-align:top}
+.answer th{background:var(--leaf-soft)}
+.answer code{background:var(--leaf-soft);padding:0 4px;border-radius:4px;font-size:.92em}
+.answer blockquote{margin:8px 0;padding:6px 12px;border-left:4px solid var(--turmeric);background:var(--turmeric-soft);border-radius:0 8px 8px 0}
+.status{color:var(--muted);font-style:italic}
+.status::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--turmeric);margin-right:8px;animation:pulse 1.2s ease-in-out infinite;vertical-align:middle}
+@keyframes pulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.status::before{animation:none}}
+.err{color:var(--chilli);font-size:.92rem}
+
+/* grounding tags — the signature element */
+.grounding{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:0 2px}
+.grounding .lead{font-size:.8rem;color:var(--muted);margin-right:2px}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;line-height:1.2;padding:4px 10px 4px 8px;border-radius:4px 14px 14px 4px;cursor:pointer;background:var(--leaf-soft);border:1px solid var(--leaf);color:var(--ink)}
+.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--panel);border:1.5px solid var(--leaf)}
+.tag.ind{background:var(--turmeric-soft);border:1px dashed var(--turmeric)}
+.tag.ind::before{border-color:var(--turmeric)}
+.tag.web{background:transparent;border:1px dashed var(--chilli)}
+.tag.doc{background:transparent;border:1px solid var(--leaf)}
+.loc{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 12px;font-size:.88rem}
+#locText{color:var(--ink)}
+.linkbtn{background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.85rem}
+.tag.web::before{border-color:var(--chilli)}
+.flag.w{background:var(--chilli-soft);border:1px dashed var(--chilli)}
+.tag .id{color:var(--muted);font-size:.75rem}
+.usage{font-size:.78rem;color:var(--muted);padding:0 4px;font-variant-numeric:tabular-nums}
+
+/* composer */
+.composer{padding:10px 28px 18px;border-top:1px solid var(--line);background:var(--bg)}
+.composer-inner{max-width:760px;margin:0 auto}
+.ctx{font-size:.82rem;color:var(--muted);margin-bottom:6px;display:flex;gap:6px;flex-wrap:wrap}
+.ctx span{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:1px 9px}
+.box{display:flex;align-items:flex-end;gap:8px;background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:6px 6px 6px 12px}
+.box:focus-within{border-color:var(--leaf)}
+.box textarea{flex:1;border:0;background:transparent;resize:none;min-height:28px;max-height:180px;padding:7px 0;outline:none;line-height:1.4}
+.iconbtn{border:0;background:transparent;width:40px;height:40px;border-radius:10px;cursor:pointer;display:grid;place-items:center;color:var(--muted)}
+.iconbtn:hover{background:var(--leaf-soft);color:var(--ink)}
+.send{background:var(--turmeric);color:#2A2117;border:0;border-radius:11px;height:40px;padding:0 16px;font-weight:700;cursor:pointer}
+.send:disabled{opacity:.45;cursor:not-allowed}
+.send.stop{background:var(--chilli);color:#fff}
+[hidden]{display:none !important}
+.preview{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.85rem;color:var(--muted);flex-wrap:wrap}
+.thumbs{display:flex;gap:8px}
+.thumb{position:relative}
+.thumb img{height:48px;width:48px;object-fit:cover;border-radius:6px;border:1px solid var(--line);display:block}
+.thumb button{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:14px;line-height:1;cursor:pointer;padding:0}
+.msg.user .photos{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.msg.user .photos .photo{max-width:150px}
+.ghost{background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:.9rem}
+.ghost:hover{border-color:var(--leaf)}
+.note{font-size:.78rem;color:var(--muted);margin-top:6px;text-align:center}
+.banner{background:var(--turmeric-soft);border:1px solid var(--turmeric);border-radius:10px;padding:10px 14px;font-size:.92rem}
+
+/* record dialog & auth overlay */
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);padding:0;width:min(640px,94vw);max-height:86vh}
+dialog::backdrop{background:rgba(20,26,18,.55)}
+.dlg-head{position:sticky;top:0;background:var(--panel);padding:16px 18px 10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.dlg-head h3{font-family:var(--serif);font-weight:400;font-size:1.5rem;margin:0;line-height:1.15}
+.dlg-head .sub{color:var(--muted);font-size:.9rem}
+.dlg-body{padding:8px 18px 18px;overflow-x:auto}
+.kv{width:100%;border-collapse:collapse;font-size:.93rem}
+.kv th{width:38%;text-align:left;color:var(--muted);font-weight:600;padding:6px 10px 6px 0;vertical-align:top;border-bottom:1px solid var(--line)}
+.kv td{padding:6px 0;border-bottom:1px solid var(--line)}
+.flag{display:inline-block;font-size:.8rem;padding:1px 8px;border-radius:999px;margin-top:4px}
+.flag.v{background:var(--leaf-soft);color:var(--leaf);border:1px solid var(--leaf)}
+.flag.i{background:var(--turmeric-soft);border:1px dashed var(--turmeric)}
+
+.auth-overlay{position:fixed;inset:0;background:rgba(20,26,18,.75);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px}
+.auth-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:28px 24px;width:min(380px,100%);box-shadow:0 10px 32px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:14px}
+.auth-card h2{font-family:var(--serif);font-size:1.85rem;margin:0;font-weight:400}
+.auth-card p{color:var(--muted);margin:-8px 0 6px;font-size:.92rem}
+.auth-card label{font-size:.85rem;font-weight:600;color:var(--muted);display:block;margin-bottom:6px}
+.auth-card input{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 12px;width:100%;font-size:1.1rem;letter-spacing:1px}
+.auth-actions{display:flex;gap:8px;margin-top:10px}
+.auth-actions .send{flex:1}
+.auth-msg{font-size:.85rem;color:var(--chilli);min-height:1.2em;line-height:1.3}
+.auth-msg.ok{color:var(--leaf)}
+
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .side{position:fixed;inset:0;z-index:20;background:var(--bg);transform:translateX(-100%);transition:transform .22s ease;padding-top:calc(22px + env(safe-area-inset-top,0px));padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
+  .side.open{transform:none}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line)}
+  .topbar .t{font-family:var(--serif);font-size:1.35rem}
+  .thread{padding:18px 14px 8px}
+  .composer{padding:8px 12px 12px}
+  .side .close{display:inline-block}
+}
+.side .close{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side" aria-label="Farm profile">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+      <div class="brand">
+        <h1>Crop Master</h1>
+        <div class="hi">फसल सलाहकार</div>
+        <p>An agronomist that answers from the Bharat Agrolink crop database.</p>
+      </div>
+      <button class="ghost close" id="closeSide">Done</button>
+    </div>
+
+    <div id="userSection" class="user-section"></div>
+
+    <div id="convSection" class="conv-section" hidden>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+        <strong style="font-size:.85rem;color:var(--muted)">Past chats</strong>
+      </div>
+      <div class="conv-list" id="convList"></div>
+    </div>
+
+    <div class="profile">
+      <h2>Your farm</h2>
+      <p class="why">Filled-in details are sent with every question so advice fits your land.</p>
+      <div class="loc"><button class="ghost" id="useLoc" type="button">📍 Use my location</button>
+        <span id="locText"></span><button class="linkbtn" id="clearLoc" type="button" hidden>Remove</button></div>
+      <div id="map" class="map" role="application" aria-label="Map: tap to set your farm's location"></div>
+      <p class="maphint" id="mapHint">Tap the map to mark your farm, or drag the pin to correct it.</p>
+      <div class="field"><label for="pPlace">Or type your village / town</label>
+        <div class="placerow"><input id="pPlace" placeholder="e.g. Belkhedi" autocomplete="off"><button class="ghost" id="findPlace" type="button">Find</button></div></div>
+      <div class="field"><label for="pState">State</label><select id="pState"></select></div>
+      <div class="field"><label for="pDistrict">District</label><input id="pDistrict" list="districtList" placeholder="e.g. Indore"><datalist id="districtList"></datalist></div>
+      <div class="field"><label for="pCrop">Main crop</label><input id="pCrop" list="cropList" placeholder="e.g. Soybean"><datalist id="cropList"></datalist></div>
+      <div class="row2">
+        <div class="field"><label for="pSeason">Season</label><select id="pSeason"></select></div>
+        <div class="field"><label for="pArea">Area (acres)</label><input id="pArea" inputmode="decimal" placeholder="5"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="pWater">Water</label><select id="pWater"><option value="">Not set</option><option>Rainfed</option><option>Canal</option><option>Borewell</option><option>Drip</option><option>Sprinkler</option></select></div>
+        <div class="field"><label for="pSoil">Soil</label><select id="pSoil"><option value="">Not set</option><option>Black</option><option>Alluvial</option><option>Red</option><option>Laterite</option><option>Sandy</option><option>Loam</option><option>Clay</option></select></div>
+      </div>
+      <div class="field"><label for="pLang">Reply language</label><select id="pLang"><option value="auto">Same as my question</option><option value="English">English</option><option value="Hindi">हिन्दी</option><option value="Hinglish">Hinglish</option></select></div>
+    </div>
+    <button class="ghost" id="newChat">Start a new conversation</button>
+    <div class="stats" id="stats"></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar"><span class="t">Crop Master</span><button class="ghost" id="openSide">Your farm</button></div>
+    <div class="thread" id="thread"><div class="thread-inner" id="threadInner"></div></div>
+    <div class="composer">
+      <div class="composer-inner">
+        <div class="ctx" id="ctx"></div>
+        <div class="preview" id="preview" hidden><div class="thumbs" id="thumbs"></div><span id="photoCount"></span><button class="ghost" id="removePhoto">Remove all</button></div>
+        <div class="box">
+          <button class="iconbtn" id="attach" title="Attach up to 3 crop photos" aria-label="Attach up to 3 crop photos">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/></svg>
+          </button>
+          <input type="file" id="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+          <textarea id="input" rows="1" placeholder="Ask about a crop, pest, disease, sowing or price… (हिन्दी में भी पूछें)"></textarea>
+          <button class="send" id="send">Ask</button>
+        </div>
+        <div class="note">Advice is drawn from Crop Master V1 seed data. Confirm chemical doses on the product label or with your local KVK.</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="auth-overlay" id="authOverlay" hidden>
+  <div class="auth-card">
+    <h2>Crop Master</h2>
+    <p>Farmer login · किसान लॉगिन</p>
+
+    <div id="authStepMobile">
+      <label>Mobile number / मोबाइल नंबर</label>
+      <input
+        id="authMobile"
+        inputmode="tel"
+        maxlength="14"
+        placeholder="9876543210"
+      >
+      <div class="auth-actions">
+        <button class="send" id="sendOtp">OTP bhejo</button>
+      </div>
+    </div>
+
+    <div id="authStepOtp" hidden>
+      <label>6-digit OTP</label>
+      <input
+        id="authOtp"
+        inputmode="numeric"
+        maxlength="6"
+        placeholder="123456"
+      >
+      <div class="auth-actions">
+        <button class="send" id="verifyOtp">Login</button>
+        <button class="ghost" id="backOtp">Back</button>
+      </div>
+    </div>
+
+    <div class="auth-msg" id="authMsg"></div>
+    <button class="ghost" id="guestBtn">
+      Continue without login
+    </button>
+  </div>
+</div>
+
+<dialog id="dlg"><div class="dlg-head"><div><h3 id="dlgTitle"></h3><div class="sub" id="dlgSub"></div></div><button class="ghost" id="dlgClose">Close</button></div><div class="dlg-body" id="dlgBody"></div></dialog>
+
+<script>
+/* Crop Master Agronomist — frontend for the FastAPI backend.
+   Set API_BASE if the frontend is hosted on a different origin than the API. */
+const API_BASE = window.CROP_MASTER_API || "";
+
+const $ = id=>document.getElementById(id);
+const store = {get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let META = {states:[],seasons:[],districts:{},crop_names:[],stats:null};
+let profile = store.get("cm_profile",{state:"",district:"",crop:"",season:"",area:"",water:"",soil:"",lang:"auto",lat:"",lon:"",place:"",location_source:""});
+let history = store.get("cm_history",[]);   // {role, content, refs?:[{id,title,flag}], photo?:bool}
+let busy=false, ctl=null, photos=[], statusEl=null, lastPhoto=null;
+const MAX_PHOTOS=3;
+
+let token = localStorage.getItem("cm_token") || "";
+let loggedIn = !!token;
+let currentConversationId = null;
+let authMobile = "";
+let mobileLast4 = localStorage.getItem("cm_mobile_last4") || "";
+
+function authHeaders(extra={}) {
+  const h = {...extra};
+  if(token) h.Authorization = "Bearer " + token;
+  return h;
+}
+
+/* ---------- profile ---------- */
+function opt(sel, items, cur){ sel.innerHTML=""; items.forEach(([v,l])=>{const o=document.createElement("option");o.value=v;o.textContent=l;if(v===cur)o.selected=true;sel.appendChild(o);}); }
+function fillProfileForm(){
+  opt($("pState"), [["","Not set"],...META.states.map(s=>[s.state,s.state])], profile.state);
+  opt($("pSeason"), [["","Not set"],...META.seasons.map(s=>[s.en,s.en+" · "+s.hi])], profile.season);
+  $("pDistrict").value=profile.district; $("pCrop").value=profile.crop; $("pArea").value=profile.area;
+  $("pWater").value=profile.water; $("pSoil").value=profile.soil; $("pLang").value=profile.lang;
+  const cl=$("cropList"); cl.innerHTML=""; META.crop_names.forEach(n=>{const o=document.createElement("option");o.value=n;cl.appendChild(o);});
+  fillDistricts();
+}
+function fillDistricts(){ const dl=$("districtList"); dl.innerHTML=""; (META.districts[profile.state]||[]).forEach(d=>{const o=document.createElement("option");o.value=d;dl.appendChild(o);}); }
+function readProfile(){
+  const keep={lat:profile.lat||"",lon:profile.lon||"",place:profile.place||"",location_source:profile.location_source||""};
+  if($("pDistrict").value && !keep.place && !keep.location_source){
+    keep.location_source = "district";
+  }
+  profile={state:$("pState").value,district:$("pDistrict").value.trim(),crop:$("pCrop").value.trim(),season:$("pSeason").value,area:$("pArea").value.trim(),water:$("pWater").value,soil:$("pSoil").value,lang:$("pLang").value, ...keep};
+  store.set("cm_profile",profile); fillDistricts(); renderCtx();
+}
+["pState","pDistrict","pCrop","pSeason","pArea","pWater","pSoil","pLang"].forEach(id=>$(id).addEventListener("change",readProfile));
+function renderCtx(){
+  const c=$("ctx"); c.innerHTML="";
+  const bits=[profile.place&&"📍 "+profile.place, profile.crop, profile.district&&profile.state?profile.district+", "+profile.state:(profile.district||profile.state), profile.season, profile.area&&profile.area+" acres", profile.water, profile.soil&&profile.soil+" soil"].filter(Boolean);
+  if(!bits.length){ const s=document.createElement("span"); s.textContent="No farm details yet — add them for advice that fits your land"; s.style.cursor="pointer"; s.onclick=()=>$("side").classList.add("open"); c.appendChild(s); return; }
+  bits.forEach(b=>{const s=document.createElement("span");s.textContent=b;c.appendChild(s);});
+}
+$("openSide").onclick=()=>{ $("side").classList.add("open"); setTimeout(()=>map&&map.invalidateSize(),260); };
+$("closeSide").onclick=()=>$("side").classList.remove("open");
+
+function applyCustomerProfile(p){
+  if(!p) return;
+  // Customer data is only a fallback. Never overwrite values already selected
+  // or typed by the farmer in this browser session.
+  for(const k of ["state","district","season","water","soil"]){
+    if(!profile[k] && p[k]) profile[k] = p[k];
+  }
+  if(!profile.crop && p.crops) profile.crop = String(p.crops).split(",")[0].trim();
+
+  // Imported profiles use city/district/lat/lng rather than `place`.
+  // Existing GPS/typed values always win over customer-order data.
+  if(!profile.location_source && !profile.place){
+    if(p.lat !== null && p.lat !== undefined && p.lat !== "" &&
+       p.lng !== null && p.lng !== undefined && p.lng !== ""){
+      profile.lat = String(p.lat);
+      profile.lon = String(p.lng);
+      profile.place = [p.city, p.district, p.state].filter(Boolean).join(", ");
+      profile.location_source = "customer";
+    } else if(p.city || p.district){
+      profile.place = [p.city || p.district, p.state].filter(Boolean).join(", ");
+      profile.location_source = "customer";
+    }
+  }
+
+  fillProfileForm();
+  store.set("cm_profile", profile);
+  renderLoc();
+  renderCtx();
+}
+
+/* ---------- location (GPS or a typed village) ---------- */
+function applyPlace(p, lat, lon, source="typed"){
+  profile.lat=String(lat ?? p.lat ?? ""); profile.lon=String(lon ?? p.lon ?? "");
+  profile.place=[...new Set([p.locality,p.district,p.state].filter(Boolean))].join(", ")||`${profile.lat}, ${profile.lon}`;
+  profile.location_source=source;
+  if(p.state){ if(![...$("pState").options].some(o=>o.value===p.state)){ const o=document.createElement("option"); o.value=o.textContent=p.state; $("pState").appendChild(o); } $("pState").value=p.state; }
+  if(p.district) $("pDistrict").value=p.district;
+  readProfile(); renderLoc();
+}
+async function findTypedPlace(){
+  const q=$("pPlace").value.trim();
+  if(q.length<3) return renderLoc("Type at least 3 letters of your village or town.");
+  renderLoc("Searching for "+q+"…");
+  try{
+    const u=`${API_BASE}/api/region/search?q=${encodeURIComponent(q)}&state=${encodeURIComponent(profile.state||"")}&district=${encodeURIComponent(profile.district||"")}`;
+    const r=await fetch(u);
+    if(r.status===404) return renderLoc(`Couldn't find "${q}". Try adding the tehsil or district, e.g. "${q}, Vidisha".`);
+    if(!r.ok) throw new Error(r.status);
+    applyPlace((await r.json()).place, null, null, "typed");
+    $("pPlace").value="";
+  }catch(e){ renderLoc("Place search isn't working right now. You can still pick your state and district below."); }
+}
+$("findPlace").onclick=findTypedPlace;
+$("pPlace").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); findTypedPlace(); } });
+function renderLoc(msg){
+  $("locText").textContent=msg||(profile.place?"📍 "+profile.place:"");
+  $("useLoc").hidden=!!profile.place && !msg;
+  $("clearLoc").hidden=!profile.place;
+  if(!msg) showOnMap();
+}
+
+/* ---------- map (Leaflet + OpenStreetMap tiles) ---------- */
+let map=null, marker=null;
+const INDIA=[22.5,79], INDIA_ZOOM=4;
+function initMap(){
+  if(map) return;
+  if(!window.L){ $("map").hidden=true; $("mapHint").hidden=true; return; }  // map library didn't load: GPS and typing still work
+  map=L.map("map",{scrollWheelZoom:false}).setView(INDIA,INDIA_ZOOM);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
+  map.on("click",e=>pickPoint(e.latlng.lat,e.latlng.lng));
+  showOnMap();
+}
+function showOnMap(){
+  if(!map) return;
+  const lat=parseFloat(profile.lat), lon=parseFloat(profile.lon);
+  if(isNaN(lat)||isNaN(lon)){
+    if(marker){ map.removeLayer(marker); marker=null; }
+    map.setView(INDIA,INDIA_ZOOM); return;
+  }
+  if(!marker){
+    marker=L.marker([lat,lon],{draggable:true,title:"Your farm"}).addTo(map);
+    marker.on("dragend",()=>{ const p=marker.getLatLng(); pickPoint(p.lat,p.lng); });
+  } else marker.setLatLng([lat,lon]);
+  map.setView([lat,lon],Math.max(map.getZoom(),13));
+}
+async function pickPoint(lat,lon){
+  lat=Number(lat).toFixed(3); lon=Number(lon).toFixed(3);
+  renderLoc("Finding this place…");
+  let p={};
+  try{ const r=await fetch(API_BASE+`/api/region?lat=${lat}&lon=${lon}`); if(r.ok) p=(await r.json()).place||{}; }catch(e){}
+  applyPlace(p, lat, lon, "gps");
+}
+$("useLoc").onclick=()=>{
+  if(!navigator.geolocation) return renderLoc("Location isn't available in this browser.");
+  if(!window.isSecureContext) return renderLoc("Location works only on an https:// link or localhost.");
+  renderLoc("Finding your location…");
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    const lat=pos.coords.latitude.toFixed(3), lon=pos.coords.longitude.toFixed(3);
+    let p={};
+    try{ const r=await fetch(API_BASE+`/api/region?lat=${lat}&lon=${lon}`); if(r.ok) p=(await r.json()).place||{}; }catch(e){}
+    applyPlace(p, lat, lon, "gps");
+  }, err=>renderLoc(err.code===1?"Location permission was denied. You can still pick your state and district below.":"Couldn't get your location. Try again outdoors, or pick your district below."),
+  {enableHighAccuracy:true, timeout:15000, maximumAge:600000});
+};
+$("clearLoc").onclick=()=>{ profile.lat=profile.lon=profile.place=profile.location_source=""; store.set("cm_profile",profile); renderLoc(); renderCtx(); };
+
+/* ---------- rendering ---------- */
+function md(s){
+  try{ if(window.marked && window.DOMPurify) return DOMPurify.sanitize(marked.parse(s,{breaks:true})); }catch(e){}
+  const d=document.createElement("div"); d.textContent=s; return d.innerHTML.replace(/\n/g,"<br>");
+}
+const stripRefs = s => s.replace(/\n?\s*REFS:[^\n]*\s*$/i,"").replace(/\n?\s*REFS?:?\s*$/i,"");
+function tagsEl(refs){
+  if(!refs||!refs.length) return null;
+  const wrap=document.createElement("div"); wrap.className="grounding";
+  const l=document.createElement("span"); l.className="lead"; l.textContent="From the database:"; wrap.appendChild(l);
+  refs.forEach(r=>{ const b=document.createElement("button"); b.className="tag"+(r.flag==="Indicative"?" ind":/web/i.test(r.flag||"")?" web":r.flag==="Regional advisory"?" doc":"");
+    b.title=r.flag?r.flag+" record":"Database record";
+    const n=document.createElement("span"); n.textContent=r.title; const i=document.createElement("span"); i.className="id"; i.textContent=r.id;
+    b.append(n,i); b.onclick=()=>openRecord(r.id); wrap.appendChild(b); });
+  return wrap;
+}
+const LABELS={crop_name_en:"Name",crop_name_hi:"Hindi name",season_id:"Season",cat_id:"Category",msp_2024_rs_qtl:"MSP 2024 (₹/qtl)",avg_yield_qtl_ha:"Average yield (qtl/ha)",water_need_mm:"Water need (mm)",ph_range:"Soil pH",duration_days:"Duration (days)",phi_days:"Pre-harvest interval (days)",etl_value:"Economic threshold",cibrc_registered:"CIBRC registered",goi_scheme:"Govt. scheme"};
+function label(k){ return LABELS[k] || (k.charAt(0).toUpperCase()+k.slice(1)).replace(/_/g," ").replace(/\ben\b/,"(English)").replace(/\bhi\b/,"(Hindi)").replace(/\bid\b/," ID"); }
+async function openRecord(id){
+  let data; try{ const r=await fetch(API_BASE+"/api/record/"+encodeURIComponent(id)); if(!r.ok) throw 0; data=await r.json(); }catch(e){ return; }
+  const rec=data.record;
+  $("dlgTitle").textContent=data.title;
+  const sub=$("dlgSub"); const hi=rec.crop_name_hi||rec.pest_name_hi||rec.disease_name_hi;
+  sub.textContent=data.id+(hi&&!rec.map_id?" · "+hi:"");
+  if(data.flag){ const f=document.createElement("div"); const web=/web/i.test(data.flag); f.className="flag "+(data.flag==="Verified"?"v":web?"w":"i"); f.textContent=data.flag==="Verified"?"Verified record":web?"From web research — not yet checked by an agronomist":data.flag==="Regional advisory"?"Regional advisory document":"Indicative — awaiting agronomist QA"; if(data.flag==="Regional advisory") f.className="flag v"; sub.appendChild(document.createElement("br")); sub.appendChild(f); }
+  const t=document.createElement("table"); t.className="kv";
+  Object.entries(rec).forEach(([k,v])=>{ if(k==="accuracy_flag") return;
+    const tr=document.createElement("tr"); const th=document.createElement("th"); th.textContent=label(k); const td=document.createElement("td"); td.textContent=v; tr.append(th,td); t.appendChild(tr); });
+  $("dlgBody").innerHTML=""; $("dlgBody").appendChild(t); $("dlg").showModal();
+}
+$("dlgClose").onclick=()=>$("dlg").close();
+$("dlg").addEventListener("click",e=>{ if(e.target===$("dlg")) $("dlg").close(); });
+
+function addMsg(role, text, opts={}){
+  const m=document.createElement("div"); m.className="msg "+(role==="user"?"user":"ai");
+  if(role!=="user"){ const w=document.createElement("div"); w.className="who"; w.textContent="Crop Master agronomist"; m.appendChild(w); }
+  if(opts.photoUrls&&opts.photoUrls.length){ const w=document.createElement("div"); w.className="photos";
+    opts.photoUrls.forEach(u=>{ const i=document.createElement("img"); i.className="photo"; i.src=u; i.alt="Crop photo you sent"; w.appendChild(i); }); m.appendChild(w); }
+  else if(opts.hadPhoto){ const s=document.createElement("div"); s.className="who"; s.textContent=opts.hadPhoto>1?opts.hadPhoto+" photos sent":"Photo sent"; m.appendChild(s); }
+  const b=document.createElement("div"); b.className="bubble"+(role==="user"?"":" answer");
+  if(role==="user") b.textContent=text; else b.innerHTML=md(text);
+  m.appendChild(b);
+  const t=tagsEl(opts.refs); if(t) m.appendChild(t);
+  const u=usageEl(opts.usage); if(u) m.appendChild(u);
+  $("threadInner").appendChild(m); scrollDown(); return {m,b};
+}
+function usageEl(u){
+  if(!u) return null;
+  const d=document.createElement("div"); d.className="usage";
+  const n=x=>Number(x||0).toLocaleString("en-IN");
+  const tin=(u.input_tokens??u.prompt_tokens??0)+(u.vision_input_tokens||0);   // server sends input_/output_tokens
+  const tout=(u.output_tokens??u.completion_tokens??0)+(u.vision_output_tokens||0);
+  d.textContent=`${n(tin+tout)} tokens (${n(tin)} in${u.cached_tokens?", "+n(u.cached_tokens)+" cached":""}, ${n(tout)} out${u.vision_input_tokens?", incl. photo":""}) · ₹${Number(u.cost_inr||0).toFixed(3)} / $${Number(u.cost_usd||0).toFixed(5)}`;
+  d.title=u.tool_rounds>1?`${u.tool_rounds} model calls (database lookups used)`:"1 model call";
+  return d;
+}
+function scrollDown(){ const t=$("thread"); t.scrollTop=t.scrollHeight; }
+
+const STARTERS=[
+  ["My soybean leaves have yellow mosaic patches. What should I do?","Diagnosis"],
+  ["गेहूं में पीला रतुआ दिख रहा है, क्या स्प्रे करें?","Hindi"],
+  ["Which rabi crops suit black soil in Madhya Pradesh with limited water?","Crop planning"],
+  ["Compare gram and mustard: duration, water need, yield and MSP.","Comparison"],
+  ["When should I scout for pink bollworm in cotton, and what is the ETL?","Pest timing"],
+  ["Is ashwagandha a good option for my farm in Neemuch?","Medicinal crops"]
+];
+function renderWelcome(){
+  const s=META.stats;
+  const w=document.createElement("div"); w.className="welcome";
+  w.innerHTML=`<h2>Ask the agronomist about your field.</h2><p></p>`;
+  w.querySelector("p").textContent = "Sowing, varieties, water, fertilizer, pests, diseases or prices — in English, हिन्दी or Hinglish. "
+    + (s ? `Every answer is checked against ${s.crops} crops and ${s.protocols} pest and disease protocols, and shows which records it used.` : "Every answer shows which database records it used.");
+  const g=document.createElement("div"); g.className="starters";
+  STARTERS.forEach(([q,k])=>{ const b=document.createElement("button"); b.className="starter"; b.textContent=q; const sm=document.createElement("small"); sm.textContent=k; b.appendChild(sm); b.onclick=()=>{ $("input").value=q; send(); }; g.appendChild(b); });
+  w.appendChild(g); $("threadInner").appendChild(w);
+}
+function renderHistory(){
+  $("threadInner").innerHTML="";
+  if(!history.length) renderWelcome();
+  history.forEach(h=>addMsg(h.role,h.content,{refs:h.refs,hadPhoto:h.photo,usage:h.usage}));
+}
+function banner(text){ const d=document.createElement("div"); d.className="banner"; d.textContent=text; $("threadInner").prepend(d); }
+
+/* ---------- photo: downscale to ≤1024px JPEG before upload ---------- */
+$("attach").onclick=()=>$("file").click();
+function renderPreview(note){
+  const t=$("thumbs"); t.innerHTML="";
+  photos.forEach((f,i)=>{ const d=document.createElement("div"); d.className="thumb";
+    const img=document.createElement("img"); img.src=URL.createObjectURL(f); img.alt="Attached crop photo "+(i+1);
+    const x=document.createElement("button"); x.textContent="×"; x.title="Remove this photo"; x.setAttribute("aria-label","Remove photo "+(i+1));
+    x.onclick=()=>{ photos.splice(i,1); renderPreview(); };
+    d.append(img,x); t.appendChild(d); });
+  $("photoCount").textContent=note||(photos.length===1?"Photo attached":photos.length+" photos attached");
+  $("preview").hidden=photos.length===0;
+}
+$("file").onchange=()=>{
+  const picked=[...$("file").files]; $("file").value="";  // reset so the same file can be picked again
+  const room=MAX_PHOTOS-photos.length;
+  photos=photos.concat(picked.slice(0,Math.max(room,0)));
+  renderPreview(picked.length>room?`Up to ${MAX_PHOTOS} photos per question; extra ones were left out`:"");
+};
+$("removePhoto").onclick=()=>{ photos=[]; renderPreview(); };
+function toDataUrl(file, max=1024){
+  return new Promise((res,rej)=>{
+    const img=new Image(); img.onload=()=>{
+      const k=Math.min(1, max/Math.max(img.width,img.height));
+      const c=document.createElement("canvas"); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+      c.getContext("2d").drawImage(img,0,0,c.width,c.height); res(c.toDataURL("image/jpeg",0.85));
+    }; img.onerror=()=>rej(new Error("unreadable image")); img.src=URL.createObjectURL(file);
+  });
+}
+
+/* ---------- auth & conversation handling ---------- */
+function showAuth(){
+  $("authOverlay").hidden = false;
+  $("authStepMobile").hidden = false;
+  $("authStepOtp").hidden = true;
+  $("authMsg").textContent = "";
+  $("authMobile").value = authMobile || "";
+  $("authOtp").value = "";
+  setTimeout(() => $("authMobile").focus(), 50);
+}
+function hideAuth(){
+  $("authOverlay").hidden = true;
+  $("authMsg").textContent = "";
+}
+
+$("sendOtp").onclick = async () => {
+  const m = $("authMobile").value.trim();
+  if(!m || m.replace(/\D/g, "").length < 10){
+    $("authMsg").className = "auth-msg";
+    $("authMsg").textContent = "Please enter a valid 10-digit mobile number.";
+    return;
+  }
+  authMobile = m;
+  $("authMsg").className = "auth-msg";
+  $("authMsg").textContent = "Sending OTP…";
+  try{
+    const r = await fetch(API_BASE + "/api/auth/request-otp", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({mobile: m})
+    });
+    const d = await r.json();
+    if(!r.ok){
+      $("authMsg").textContent = d.detail || "Failed to send OTP.";
+      return;
+    }
+    $("authStepMobile").hidden = true;
+    $("authStepOtp").hidden = false;
+    $("authMsg").className = "auth-msg ok";
+    $("authMsg").textContent = d.message || "OTP sent successfully.";
+    $("authOtp").focus();
+  }catch(e){
+    $("authMsg").className = "auth-msg";
+    $("authMsg").textContent = "Network error sending OTP.";
+  }
+};
+
+$("backOtp").onclick = () => {
+  $("authStepOtp").hidden = true;
+  $("authStepMobile").hidden = false;
+  $("authMsg").textContent = "";
+};
+
+$("verifyOtp").onclick = async () => {
+  const otp = $("authOtp").value.trim();
+  if(!/^\d{6}$/.test(otp)){
+    $("authMsg").className = "auth-msg";
+    $("authMsg").textContent = "Enter the 6-digit OTP.";
+    return;
+  }
+  $("authMsg").className = "auth-msg";
+  $("authMsg").textContent = "Verifying…";
+  try{
+    const r = await fetch(API_BASE + "/api/auth/verify-otp", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({mobile: authMobile, otp})
+    });
+    const d = await r.json();
+    if(!r.ok){
+      $("authMsg").textContent = d.detail || "Invalid OTP.";
+      return;
+    }
+    token = d.token;
+    localStorage.setItem("cm_token", token);
+    mobileLast4 = d.mobile_last4 || "";
+    localStorage.setItem("cm_mobile_last4", mobileLast4);
+    loggedIn = true;
+    applyCustomerProfile(d.profile);
+    renderUserBar();
+    hideAuth();
+    loadConversations();
+  }catch(e){
+    $("authMsg").className = "auth-msg";
+    $("authMsg").textContent = "Verification failed.";
+  }
+};
+
+$("guestBtn").onclick = () => {
+  hideAuth();
+};
+
+$("authMobile").addEventListener("keydown", e => { if(e.key === "Enter") $("sendOtp").click(); });
+$("authOtp").addEventListener("keydown", e => { if(e.key === "Enter") $("verifyOtp").click(); });
+
+function renderUserBar(){
+  const sec = $("userSection");
+  if(!sec) return;
+  if(loggedIn){
+    sec.innerHTML = `
+      <div class="user-bar">
+        <span>👨‍🌾 Farmer (..${mobileLast4 || "logged in"})</span>
+        <button class="ghost" id="logoutBtn" style="padding:2px 8px;font-size:.8rem">Logout</button>
+      </div>
+    `;
+    $("logoutBtn").onclick = async () => {
+      if(busy) ctl && ctl.abort();   // stop any in-flight answer before clearing the chat
+      try{ await fetch(API_BASE + "/api/auth/logout", {method:"POST", headers:authHeaders()}); }catch(e){}
+      token = ""; loggedIn = false; mobileLast4 = ""; currentConversationId = null;
+      localStorage.removeItem("cm_token");
+      localStorage.removeItem("cm_mobile_last4");
+      // Local UI reset only — server-side conversations are left untouched.
+      history = []; lastPhoto = null; photos = [];
+      store.set("cm_history", history);
+      profile = {state:"",district:"",crop:"",season:"",area:"",water:"",soil:"",lang:"auto",lat:"",lon:"",place:"",location_source:""};
+      store.set("cm_profile", profile);
+      fillProfileForm(); renderLoc(); renderCtx(); renderPreview();
+      renderHistory();
+      $("convList").innerHTML = "";
+      renderUserBar();
+      $("convSection").hidden = true;
+      showAuth();
+    };
+  } else {
+    sec.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">
+        <span style="font-size:.85rem;color:var(--muted)">Guest mode</span>
+        <button class="ghost" id="loginBtn" style="padding:2px 8px;font-size:.8rem">Login</button>
+      </div>
+    `;
+    $("loginBtn").onclick = showAuth;
+  }
+}
+
+async function loadConversations(){
+  if(!loggedIn) return;
+  try{
+    const r = await fetch(API_BASE + "/api/conversations", {headers:authHeaders()});
+    if(r.status === 401) return showAuth();
+    if(!r.ok) return;
+    const list = await r.json();
+    if(!loggedIn) return;   // logged out while the request was in flight
+    renderConversations(list);
+  }catch(e){}
+}
+
+function renderConversations(list){
+  const sec = $("convSection");
+  const el = $("convList");
+  if(!list || !list.length){ sec.hidden = true; return; }
+  sec.hidden = false;
+  el.innerHTML = "";
+  list.forEach(c => {
+    const btn = document.createElement("button");
+    btn.className = "conv-item" + (c.id === currentConversationId ? " active" : "");
+    btn.textContent = c.title || `Chat #${c.id} (${c.created_at ? c.created_at.slice(0,10) : ""})`;
+    btn.onclick = () => loadConversation(c.id);
+    el.appendChild(btn);
+  });
+}
+
+async function loadConversation(cid){
+  if(busy) ctl && ctl.abort();
+  try{
+    const r = await fetch(API_BASE + "/api/conversations/" + cid, {headers:authHeaders()});
+    if(r.status === 401) return showAuth();
+    if(!r.ok) return;
+    const data = await r.json();
+    currentConversationId = cid;
+    const msgs = data.messages || [];
+    history = msgs.map(m => ({
+      role: m.role,
+      content: m.content,
+      refs: m.refs || [],
+      photo: m.photo_note ? 1 : 0
+    }));
+    lastPhoto = null;
+    store.set("cm_history", history);
+    renderHistory();
+    loadConversations();
+    $("side").classList.remove("open");
+  }catch(e){}
+}
+
+/* ---------- sending ---------- */
+const input=$("input");
+input.addEventListener("input",()=>{ input.style.height="auto"; input.style.height=Math.min(input.scrollHeight,180)+"px"; });
+input.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){ e.preventDefault(); send(); } });
+$("send").onclick=()=>{ if(busy){ ctl&&ctl.abort(); } else send(); };
+
+async function startNewConversation(){
+  if(busy) ctl && ctl.abort();
+  if(loggedIn){
+    try{
+      const r = await fetch(API_BASE + "/api/conversations", {method:"POST", headers:authHeaders()});
+      if(r.status === 401) return showAuth();
+      if(r.ok){
+        const d = await r.json();
+        currentConversationId = d.id;
+      }
+    }catch(e){}
+  } else {
+    currentConversationId = null;
+  }
+  history = [];
+  lastPhoto = null;
+  store.set("cm_history", history);
+  renderHistory();
+  if(loggedIn) loadConversations();
+  $("side").classList.remove("open");
+}
+$("newChat").onclick = startNewConversation;
+
+function setBusy(b){ busy=b; const s=$("send"); s.textContent=b?"Stop":"Ask"; s.classList.toggle("stop",b); }
+
+async function ensureServerConversation(){
+  if(!loggedIn) return true;
+  if(currentConversationId) return true;
+  try{
+    const r=await fetch(API_BASE+"/api/conversations",{
+      method:"POST",
+      headers:authHeaders()
+    });
+    if(r.status===401){
+      token=""; loggedIn=false; currentConversationId=null;
+      localStorage.removeItem("cm_token");
+      localStorage.removeItem("cm_mobile_last4");
+      renderUserBar();
+      showAuth();
+      return false;
+    }
+    if(!r.ok) return false;
+    const d=await r.json();
+    currentConversationId=d.id;
+    loadConversations();
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+async function send(){
+  const q=input.value.trim(); if(!q||busy) return;
+  readProfile();
+  if(loggedIn && !(await ensureServerConversation())) return;
+  if(!history.length) $("threadInner").innerHTML="";
+  const photoFiles=photos.slice(); const photoUrls=photoFiles.map(f=>URL.createObjectURL(f));
+  addMsg("user",q,{photoUrls});
+  const prior=history.slice(-10).map(h=>({role:h.role,content:(h.photo&&h.role==="user"?"[sent a crop photo] ":"")+h.content}));
+  const userTurn={role:"user",content:q,photo:photoFiles.length};
+  history.push(userTurn);
+  input.value=""; input.style.height="auto"; photos=[]; renderPreview();
+
+  const {m,b}=addMsg("ai","");
+  statusEl=document.createElement("div"); statusEl.className="status"; statusEl.textContent="Sending…"; b.appendChild(statusEl);
+  ctl=new AbortController(); setBusy(true);
+  let text="", refs=[], failed=null, usage=null;
+  try{
+    let images=[], photoRepeat=false;
+    if(photoFiles.length){ try{ images=await Promise.all(photoFiles.map(f=>toDataUrl(f))); lastPhoto={data:images,used:0}; }catch(e){ failed="A photo couldn't be read. Try JPG or PNG files."; } }
+    else if(lastPhoto && lastPhoto.used<3){ images=lastPhoto.data; photoRepeat=true; lastPhoto.used++; }  // follow-ups re-check the same photo
+    if(!failed){
+      const res=await fetch(API_BASE+"/api/chat",{
+        method:"POST",
+        headers:authHeaders({"Content-Type":"application/json"}),
+        signal:ctl.signal,
+        body:JSON.stringify({
+          question:q,
+          profile,
+          history:prior,
+          images,
+          photo_repeat:photoRepeat,
+          conversation_id:currentConversationId
+        })
+      });
+      if(res.status===401){
+        showAuth();
+        failed="Please login to continue.";
+      } else if(!res.ok){
+        let detail=""; try{ const j=await res.json(); detail=Array.isArray(j.detail)?j.detail.map(d=>d.msg).join("; "):(j.detail||""); }catch(e){}
+        failed = res.status===422 ? "The question couldn't be sent: "+(detail||"invalid input")+"." : "The server returned an error ("+res.status+"). Ask again.";
+      } else {
+        const reader=res.body.getReader(); const dec=new TextDecoder(); let buf="";
+        while(true){
+          const {value,done}=await reader.read(); if(done) break;
+          buf+=dec.decode(value,{stream:true});
+          let i; while((i=buf.indexOf("\n\n"))>=0){
+            const line=buf.slice(0,i).trim(); buf=buf.slice(i+2);
+            if(!line.startsWith("data:")) continue;
+            let ev; try{ ev=JSON.parse(line.slice(5)); }catch(e){ continue; }
+            if(ev.type==="status"){ if(!text){ if(!statusEl){ b.innerHTML=""; statusEl=document.createElement("div"); statusEl.className="status"; b.appendChild(statusEl);} statusEl.textContent=ev.text; } }
+            else if(ev.type==="delta"){ text+=ev.text; statusEl=null; b.innerHTML=md(stripRefs(text)); scrollDown(); }
+            else if(ev.type==="reset"){ text=""; }
+            else if(ev.type==="done"){ refs=ev.refs||[]; usage=ev.usage||null; if(ev.photo_note) userTurn.content=q+"\n[Photo showed: "+ev.photo_note+"]"; }
+            else if(ev.type==="error"){ failed=ev.text; }
+          }
+        }
+      }
+    }
+  }catch(e){
+    if(e.name==="AbortError"){ failed = text ? null : "stopped"; }
+    else failed="Couldn't reach the server. Check that the backend is running, then ask again.";
+  }
+  const body=stripRefs(text).trim();
+  b.innerHTML = body ? md(body) : "";
+  if(failed==="stopped"){ b.innerHTML='<p class="status" style="font-style:normal">Stopped.</p>'; }
+  else if(failed){ const p=document.createElement("p"); p.className="err"; p.textContent=failed; b.appendChild(p); }
+  const t=tagsEl(refs); if(t) m.appendChild(t);
+  const u=usageEl(usage); if(u) m.appendChild(u);
+  if(body) history.push({role:"assistant",content:body,refs,usage}); else history.pop();
+  statusEl=null; setBusy(false); store.set("cm_history",history.slice(-30)); scrollDown();
+  if(loggedIn) loadConversations();
+}
+
+/* ---------- boot ---------- */
+(async()=>{
+  renderCtx();
+  renderUserBar();
+  try{
+    const r=await fetch(API_BASE+"/api/meta"); if(!r.ok) throw 0; META=await r.json();
+    fillProfileForm();
+    const s=META.stats;
+    $("stats").innerHTML=`<strong>${s.crops}</strong> crops, <strong>${s.pests}</strong> pests and <strong>${s.diseases}</strong> diseases<br><strong>${s.protocols}</strong> crop–pest/disease protocols<br>${s.verified} crop rows verified, ${s.crops-s.verified} indicative`;
+  }catch(e){ fillProfileForm(); }
+  renderHistory(); initMap(); renderLoc();
+
+  if(token){
+    try{
+      const r = await fetch(API_BASE + "/api/auth/me", {headers:authHeaders()});
+      if(r.ok){
+        const d = await r.json();
+        loggedIn = true;
+        applyCustomerProfile(d.profile);
+        renderUserBar();
+        loadConversations();
+      } else if(r.status === 401){
+        token = ""; loggedIn = false; currentConversationId = null;
+        localStorage.removeItem("cm_token");
+        localStorage.removeItem("cm_mobile_last4");
+        renderUserBar();
+        showAuth();
+      }
+    }catch(e){
+      // Keep the existing UI available if the auth check temporarily fails.
+    }
+  } else {
+    // First load without a token: explicitly offer login or guest mode.
+    showAuth();
+  }
+
+  if(!META.stats) banner("Couldn't load the crop database from the server. Start the backend (see README), then reload this page.");
+  try{ const h=await (await fetch(API_BASE+"/api/health")).json(); if(!h.key_configured) banner("The server has no OpenAI API key. Add OPENAI_API_KEY to backend/.env and restart it."); }catch(e){}
+})();
+</script>
+</body>
+</html>
